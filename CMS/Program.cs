@@ -20,6 +20,7 @@ public class Program
         builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>();
         builder.Services.AddControllersWithViews();
+        builder.Services.AddScoped<UserManager<IdentityUser>, CustomUserManager>();
 
         var app = builder.Build();
 
@@ -48,5 +49,10 @@ public class Program
         app.MapRazorPages();
 
         app.Run();
+
+        // dotnet ef database drop
+        // dotnet ef database update
+        // dotnet ef migrations add xxx
+        // dotnet ef migrations remove
     }
 }
