@@ -4,7 +4,6 @@ namespace CMS.Models;
 
 public class CommentModel
 {
-    [Display(Name="Komentarz")]
     public int Id { get; set; }
 
     [Required]

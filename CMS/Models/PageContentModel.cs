@@ -5,7 +5,6 @@ namespace CMS.Models;
 
 public class PageContentModel
 {
-    [Display(Name="Element podstrony")]
     public int Id { get; set; }
 
     [Required]

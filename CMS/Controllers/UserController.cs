@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
@@ -55,7 +56,9 @@ namespace CMS.Controllers
                 .Select(u => new { u.Id, u.UserName })
                 .ToList();
 
-            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName");
+            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName", GetCurrentUserIdentifierUserId());
+
+            ViewData["CreatedAt"] = DateTime.Now.ToString("yyyy-MM-dd");
 
             ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>();
 
@@ -90,6 +93,8 @@ namespace CMS.Controllers
                 .ToList();
 
             ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName", userModel.IdentityUserId);
+
+            ViewData["CreatedAt"] = userModel.CreatedAt.ToString("yyyy-MM-dd");
 
             ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
 
@@ -177,9 +182,9 @@ namespace CMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool UserModelExists(int id)
+        private string? GetCurrentUserIdentifierUserId()
         {
-            return _context.UserModel.Any(e => e.Id == id);
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
     }
 }

@@ -4,7 +4,6 @@ namespace CMS.Models;
 
 public class PageModel
 {
-    [Display(Name="Podstrona")]
     public int Id { get; set; }
 
     [Required]

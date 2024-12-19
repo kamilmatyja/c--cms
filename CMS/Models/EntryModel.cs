@@ -4,7 +4,6 @@ namespace CMS.Models;
 
 public class EntryModel
 {
-    [Display(Name="Wyświetlenie")]
     public int Id { get; set; }
 
     [Required]

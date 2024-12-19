@@ -5,7 +5,6 @@ namespace CMS.Models;
 
 public class RateModel
 {
-    [Display(Name="Ocena")]
     public int Id { get; set; }
 
     [Required]

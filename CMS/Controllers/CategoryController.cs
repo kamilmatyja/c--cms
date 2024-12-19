@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,7 +23,10 @@ namespace CMS.Controllers
         // GET: Category
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.CategoryModel.Include(c => c.User);
+            var applicationDbContext = _context.CategoryModel
+                .Include(c => c.User)
+                .ThenInclude(u => u.IdentityUser);
+
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -36,6 +40,7 @@ namespace CMS.Controllers
 
             var categoryModel = await _context.CategoryModel
                 .Include(c => c.User)
+                .ThenInclude(u => u.IdentityUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (categoryModel == null)
             {
@@ -48,7 +53,15 @@ namespace CMS.Controllers
         // GET: Category/Create
         public IActionResult Create()
         {
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id");
+            var users = _context.UserModel
+                .Include(u => u.IdentityUser)
+                .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
+                .ToList();
+
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", GetUserId());
+
+            ViewData["CreatedAt"] = DateTime.Now.ToString("yyyy-MM-dd");
+
             return View();
         }
 
@@ -57,15 +70,32 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId,CreatedAt,Name")] CategoryModel categoryModel)
+        public async Task<IActionResult> Create([FromForm] int userId, [FromForm] DateTime createdAt, [FromForm] string name)
         {
+            var categoryModel = new CategoryModel
+            {
+                UserId = userId,
+                User = await _context.UserModel.FindAsync(userId),
+                CreatedAt = createdAt,
+                Name = name
+            };
+
             if (ModelState.IsValid)
             {
                 _context.Add(categoryModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", categoryModel.UserId);
+
+            var users = _context.UserModel
+                .Include(u => u.IdentityUser)
+                .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
+                .ToList();
+
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", GetUserId());
+
+            ViewData["CreatedAt"] = categoryModel.CreatedAt.ToString("yyyy-MM-dd");
+
             return View(categoryModel);
         }
 
@@ -82,7 +112,14 @@ namespace CMS.Controllers
             {
                 return NotFound();
             }
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", categoryModel.UserId);
+
+            var users = _context.UserModel
+                .Include(u => u.IdentityUser)
+                .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
+                .ToList();
+
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", GetUserId());
+
             return View(categoryModel);
         }
 
@@ -91,34 +128,33 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,CreatedAt,Name")] CategoryModel categoryModel)
+        public async Task<IActionResult> Edit(int id, [FromForm] int userId, [FromForm] DateTime createdAt, [FromForm] string name)
         {
-            if (id != categoryModel.Id)
+            var categoryModel = await _context.CategoryModel.FindAsync(id);
+            if (categoryModel == null)
             {
                 return NotFound();
             }
 
+            categoryModel.UserId = userId;
+            categoryModel.User = await _context.UserModel.FindAsync(userId);
+            categoryModel.CreatedAt = createdAt;
+            categoryModel.Name = name;
+
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(categoryModel);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CategoryModelExists(categoryModel.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(categoryModel);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", categoryModel.UserId);
+
+            var users = _context.UserModel
+                .Include(u => u.IdentityUser)
+                .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
+                .ToList();
+
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", categoryModel.UserId);
+
             return View(categoryModel);
         }
 
@@ -132,6 +168,7 @@ namespace CMS.Controllers
 
             var categoryModel = await _context.CategoryModel
                 .Include(c => c.User)
+                .ThenInclude(u => u.IdentityUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (categoryModel == null)
             {
@@ -156,9 +193,13 @@ namespace CMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CategoryModelExists(int id)
+        private int GetUserId()
         {
-            return _context.CategoryModel.Any(e => e.Id == id);
+            string IdentifierUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return _context.UserModel
+                .Where(u => u.IdentityUser.Id == IdentifierUserId)
+                .Select(u => u.Id)
+                .FirstOrDefault();
         }
     }
 }

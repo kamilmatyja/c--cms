@@ -4,7 +4,6 @@ namespace CMS.Models;
 
 public class CategoryModel
 {
-    [Display(Name="Kategoria")]
     public int Id { get; set; }
 
     [Required]
