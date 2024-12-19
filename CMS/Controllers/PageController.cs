@@ -22,7 +22,7 @@ namespace CMS.Controllers
         // GET: Page
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.PageModel.Include(p => p.Category).Include(p => p.User);
+            var applicationDbContext = _context.PageModel.Include(p => p.Category).Include(p => p.ParentPage).Include(p => p.User);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -36,6 +36,7 @@ namespace CMS.Controllers
 
             var pageModel = await _context.PageModel
                 .Include(p => p.Category)
+                .Include(p => p.ParentPage)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (pageModel == null)
@@ -50,7 +51,8 @@ namespace CMS.Controllers
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.CategoryModel, "Id", "Id");
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id");
+            ViewData["ParentPageId"] = new SelectList(_context.PageModel, "Id", "Id");
+            ViewData["UserId"] = new SelectList(_context.UserModel, "Id", "Id");
             return View();
         }
 
@@ -59,7 +61,7 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId,CategoryId,CreatedAt,Link,Title,Description,Keywords,Image")] PageModel pageModel)
+        public async Task<IActionResult> Create([Bind("Id,UserId,ParentPageId,CategoryId,CreatedAt,Link,Title,Description,Keywords,Image")] PageModel pageModel)
         {
             if (ModelState.IsValid)
             {
@@ -68,7 +70,8 @@ namespace CMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["CategoryId"] = new SelectList(_context.CategoryModel, "Id", "Id", pageModel.CategoryId);
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", pageModel.UserId);
+            ViewData["ParentPageId"] = new SelectList(_context.PageModel, "Id", "Id", pageModel.ParentPageId);
+            ViewData["UserId"] = new SelectList(_context.UserModel, "Id", "Id", pageModel.UserId);
             return View(pageModel);
         }
 
@@ -86,7 +89,8 @@ namespace CMS.Controllers
                 return NotFound();
             }
             ViewData["CategoryId"] = new SelectList(_context.CategoryModel, "Id", "Id", pageModel.CategoryId);
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", pageModel.UserId);
+            ViewData["ParentPageId"] = new SelectList(_context.PageModel, "Id", "Id", pageModel.ParentPageId);
+            ViewData["UserId"] = new SelectList(_context.UserModel, "Id", "Id", pageModel.UserId);
             return View(pageModel);
         }
 
@@ -95,7 +99,7 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,CategoryId,CreatedAt,Link,Title,Description,Keywords,Image")] PageModel pageModel)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,ParentPageId,CategoryId,CreatedAt,Link,Title,Description,Keywords,Image")] PageModel pageModel)
         {
             if (id != pageModel.Id)
             {
@@ -123,7 +127,8 @@ namespace CMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["CategoryId"] = new SelectList(_context.CategoryModel, "Id", "Id", pageModel.CategoryId);
-            ViewData["UserId"] = new SelectList(_context.Set<UserModel>(), "Id", "Id", pageModel.UserId);
+            ViewData["ParentPageId"] = new SelectList(_context.PageModel, "Id", "Id", pageModel.ParentPageId);
+            ViewData["UserId"] = new SelectList(_context.UserModel, "Id", "Id", pageModel.UserId);
             return View(pageModel);
         }
 
@@ -137,6 +142,7 @@ namespace CMS.Controllers
 
             var pageModel = await _context.PageModel
                 .Include(p => p.Category)
+                .Include(p => p.ParentPage)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (pageModel == null)

@@ -6,17 +6,19 @@ namespace CMS.Models;
 
 public class UserModel
 {
-    [Display(Name="Użytkownik")]
     public int Id { get; set; }
 
+    [Required]
+    [Display(Name="Użytkownik")]
     public string IdentityUserId { get; set; }
+    public IdentityUser IdentityUser { get; set; }
 
-    public IdentityUser User { get; set; }
-
+    [Required]
     [DataType(DataType.Date)]
     [Display(Name="Data stworzenia")]
     public DateTime CreatedAt { get; set; }
 
+    [Required]
     [Display(Name="Rola")]
     public UserRolesEnum Role { get; set; }
 

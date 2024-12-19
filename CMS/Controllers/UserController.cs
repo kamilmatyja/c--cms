@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using CMS.Data;
+using CMS.Enums;
 using CMS.Models;
 
 namespace CMS.Controllers
@@ -22,7 +24,7 @@ namespace CMS.Controllers
         // GET: User
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.UserModel.Include(u => u.User);
+            var applicationDbContext = _context.UserModel.Include(u => u.IdentityUser);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -35,7 +37,7 @@ namespace CMS.Controllers
             }
 
             var userModel = await _context.UserModel
-                .Include(u => u.User)
+                .Include(u => u.IdentityUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (userModel == null)
             {
@@ -48,7 +50,15 @@ namespace CMS.Controllers
         // GET: User/Create
         public IActionResult Create()
         {
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id");
+            var availableUsers = _context.Users
+                .Where(u => !_context.UserModel.Select(um => um.IdentityUserId).Contains(u.Id))
+                .Select(u => new { u.Id, u.UserName })
+                .ToList();
+
+            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName");
+
+            ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>();
+
             return View();
         }
 
@@ -57,15 +67,32 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,IdentityUserId,CreatedAt,Role")] UserModel userModel)
+        public async Task<IActionResult> Create([FromForm] string identityUserId, [FromForm] DateTime createdAt, [FromForm] UserRolesEnum role)
         {
+            var userModel = new UserModel
+            {
+                IdentityUserId = identityUserId,
+                IdentityUser = await _context.Users.FindAsync(identityUserId),
+                CreatedAt = createdAt,
+                Role = role
+            };
+
             if (ModelState.IsValid)
             {
                 _context.Add(userModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", userModel.IdentityUserId);
+
+            var availableUsers = _context.Users
+                .Where(u => !_context.UserModel.Select(um => um.IdentityUserId).Contains(u.Id))
+                .Select(u => new { u.Id, u.UserName })
+                .ToList();
+
+            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName", userModel.IdentityUserId);
+
+            ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
+
             return View(userModel);
         }
 
@@ -82,7 +109,9 @@ namespace CMS.Controllers
             {
                 return NotFound();
             }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", userModel.IdentityUserId);
+
+            ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
+
             return View(userModel);
         }
 
@@ -91,34 +120,26 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,IdentityUserId,CreatedAt,Role")] UserModel userModel)
+        public async Task<IActionResult> Edit(int id, [FromForm] DateTime createdAt, [FromForm] UserRolesEnum role)
         {
-            if (id != userModel.Id)
+            var userModel = await _context.UserModel.FindAsync(id);
+            if (userModel == null)
             {
                 return NotFound();
             }
 
+            userModel.CreatedAt = createdAt;
+            userModel.Role = role;
+
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(userModel);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UserModelExists(userModel.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(userModel);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", userModel.IdentityUserId);
+
+            ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
+
             return View(userModel);
         }
 
@@ -131,7 +152,7 @@ namespace CMS.Controllers
             }
 
             var userModel = await _context.UserModel
-                .Include(u => u.User)
+                .Include(u => u.IdentityUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (userModel == null)
             {

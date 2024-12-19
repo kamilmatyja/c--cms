@@ -143,8 +143,10 @@ namespace CMS.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Link")
-                        .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ParentPageId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -156,6 +158,8 @@ namespace CMS.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("ParentPageId");
 
                     b.HasIndex("UserId");
 
@@ -474,6 +478,10 @@ namespace CMS.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CMS.Models.PageModel", "ParentPage")
+                        .WithMany()
+                        .HasForeignKey("ParentPageId");
+
                     b.HasOne("CMS.Models.UserModel", "User")
                         .WithMany("Pages")
                         .HasForeignKey("UserId")
@@ -481,6 +489,8 @@ namespace CMS.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("ParentPage");
 
                     b.Navigation("User");
                 });
@@ -506,13 +516,13 @@ namespace CMS.Data.Migrations
 
             modelBuilder.Entity("CMS.Models.UserModel", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "IdentityUser")
                         .WithMany()
                         .HasForeignKey("IdentityUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("IdentityUser");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

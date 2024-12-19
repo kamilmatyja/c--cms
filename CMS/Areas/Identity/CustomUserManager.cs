@@ -40,7 +40,7 @@ public class CustomUserManager : UserManager<IdentityUser>
             var userModel = new UserModel
             {
                 IdentityUserId = user.Id,
-                User = user,
+                IdentityUser = user,
                 CreatedAt = DateTime.UtcNow,
                 Role = UserRolesEnum.Reader
             };
