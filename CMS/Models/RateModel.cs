@@ -1,3 +1,5 @@
+using CMS.Enums;
+
 namespace CMS.Models;
 
 public class RateModel
@@ -12,5 +14,5 @@ public class RateModel
 
     public DateTime CreatedAt { get; set; }
 
-    public int Rating { get; set; }
+    public RatingsEnum Rating { get; set; }
 }

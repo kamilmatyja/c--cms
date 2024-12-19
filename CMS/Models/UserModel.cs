@@ -1,4 +1,5 @@
 using CMS.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace CMS.Models;
 
@@ -6,9 +7,12 @@ public class UserModel
 {
     public int Id { get; set; }
 
+    public string UserId { get; set; }
+
+    public IdentityUser User { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
-    public string Identify { get; set; }
     public UserRolesEnum Role { get; set; }
 
     public virtual ICollection<PageModel> Pages { get; set; } = new List<PageModel>();
