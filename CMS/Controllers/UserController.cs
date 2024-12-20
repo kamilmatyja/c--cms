@@ -115,6 +115,13 @@ namespace CMS.Controllers
                 return NotFound();
             }
 
+            var availableUsers = _context.Users
+                .Where(u => !_context.UserModel.Select(um => um.IdentityUserId).Contains(u.Id) || u.Id == userModel.IdentityUserId)
+                .Select(u => new { u.Id, u.UserName })
+                .ToList();
+
+            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName", userModel.IdentityUserId);
+
             ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
 
             return View(userModel);
@@ -125,7 +132,7 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [FromForm] DateTime createdAt, [FromForm] UserRolesEnum role)
+        public async Task<IActionResult> Edit(int id, [FromForm] string identityUserId, [FromForm] DateTime createdAt, [FromForm] UserRolesEnum role)
         {
             var userModel = await _context.UserModel.FindAsync(id);
             if (userModel == null)
@@ -133,6 +140,8 @@ namespace CMS.Controllers
                 return NotFound();
             }
 
+            userModel.IdentityUserId = identityUserId;
+            userModel.IdentityUser = await _context.Users.FindAsync(identityUserId);
             userModel.CreatedAt = createdAt;
             userModel.Role = role;
 
@@ -142,6 +151,13 @@ namespace CMS.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            var availableUsers = _context.Users
+                .Where(u => !_context.UserModel.Select(um => um.IdentityUserId).Contains(u.Id) || u.Id == userModel.IdentityUserId)
+                .Select(u => new { u.Id, u.UserName })
+                .ToList();
+
+            ViewData["IdentityUserId"] = new SelectList(availableUsers, "Id", "UserName", userModel.IdentityUserId);
 
             ViewData["Role"] = EnumExtensions.ToSelectList<UserRolesEnum>(userModel.Role);
 
