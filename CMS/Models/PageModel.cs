@@ -27,7 +27,7 @@ public class PageModel
     public DateTime CreatedAt { get; set; }
 
     [Display(Name="Link")]
-    public string? Link { get; set; }
+    public string Link { get; set; }
     [Required]
     [Display(Name="Tytuł")]
     public string Title { get; set; }

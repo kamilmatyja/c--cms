@@ -13,13 +13,13 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.User)
+                @Html.DisplayNameFor(model => model.UserId)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ParentPage)
+                @Html.DisplayNameFor(model => model.ParentPageId)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Category)
+                @Html.DisplayNameFor(model => model.CategoryId)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.CreatedAt)
@@ -49,10 +49,10 @@
                 @Html.DisplayFor(modelItem => item.User.Id)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.ParentPage.Id)
+                @Html.DisplayFor(modelItem => item.ParentPage.Title)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Category.Id)
+                @Html.DisplayFor(modelItem => item.Category.Name)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.CreatedAt)
@@ -70,7 +70,14 @@
                 @Html.DisplayFor(modelItem => item.Keywords)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Image)
+                @if (!string.IsNullOrEmpty(item.Image))
+                {
+                    <img src="data:image;base64,@item.Image" alt="Image" style="max-width: 100px; max-height: 100px;" />
+                }
+                else
+                {
+                    <span>No Image</span>
+                }
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

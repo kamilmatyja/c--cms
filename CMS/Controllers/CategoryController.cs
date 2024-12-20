@@ -92,7 +92,7 @@ namespace CMS.Controllers
                 .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
                 .ToList();
 
-            ViewData["UserId"] = new SelectList(users, "Id", "UserName", GetUserId());
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", categoryModel.UserId);
 
             ViewData["CreatedAt"] = categoryModel.CreatedAt.ToString("yyyy-MM-dd");
 
@@ -118,7 +118,7 @@ namespace CMS.Controllers
                 .Select(u => new { u.Id, UserName = u.IdentityUser.UserName })
                 .ToList();
 
-            ViewData["UserId"] = new SelectList(users, "Id", "UserName", GetUserId());
+            ViewData["UserId"] = new SelectList(users, "Id", "UserName", categoryModel.UserId);
 
             return View(categoryModel);
         }

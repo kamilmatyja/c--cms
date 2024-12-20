@@ -143,6 +143,7 @@ namespace CMS.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Link")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ParentPageId")

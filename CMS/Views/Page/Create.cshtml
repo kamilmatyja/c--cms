@@ -10,7 +10,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
+        <form asp-action="Create" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
                 <label asp-for="UserId" class="control-label"></label>
@@ -26,7 +26,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="CreatedAt" class="control-label"></label>
-                <input asp-for="CreatedAt" class="form-control" />
+                <input asp-for="CreatedAt" class="form-control" value="@ViewData["CreatedAt"]" />
                 <span asp-validation-for="CreatedAt" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -51,8 +51,32 @@
             </div>
             <div class="form-group">
                 <label asp-for="Image" class="control-label"></label>
-                <input asp-for="Image" class="form-control" />
+                <input asp-for="Image" class="form-control" type="file" accept=".webp,.jpeg,.jpg,.png,.gif" />
                 <span asp-validation-for="Image" class="text-danger"></span>
+            </div>
+            <div id="contentInputs">
+                @if (ViewData["Contents"] != null)
+                {
+                    foreach (var content in ViewData["Contents"] as List<CMS.Models.PageContentModel>)
+                    {
+                        <div class="form-group">
+                            @if (content.Type == CMS.Enums.ContentTypesEnum.Text)
+                            {
+                                <label>Text Content</label>
+                                <textarea name="Contents" class="form-control">@content.Value</textarea>
+                            }
+                            else if (content.Type == CMS.Enums.ContentTypesEnum.Image)
+                            {
+                                <label>Image Content</label>
+                                <input type="file" name="Contents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-secondary" onclick="addTextContent()">Add Text</button>
+                <button type="button" class="btn btn-secondary" onclick="addImageContent()">Add Image</button>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
@@ -64,4 +88,24 @@
 <div>
     <a asp-action="Index">Back to List</a>
 </div>
+
+@section Scripts {
+    <script type="text/javascript">
+        function addTextContent() {
+            var contentInputs = document.getElementById('contentInputs');
+            var div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = '<label>Text Content</label><textarea name="Contents" class="form-control"></textarea>';
+            contentInputs.appendChild(div);
+        }
+
+        function addImageContent() {
+            var contentInputs = document.getElementById('contentInputs');
+            var div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = '<label>Image Content</label><input type="file" name="Contents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />';
+            contentInputs.appendChild(div);
+        }
+    </script>
+}
 
