@@ -1,3 +1,4 @@
+@using CMS.Enums
 @model CMS.Models.PageModel
 
 @{
@@ -57,19 +58,25 @@
             <div id="contentInputs">
                 @if (ViewData["Contents"] != null)
                 {
-                    foreach (var content in ViewData["Contents"] as List<CMS.Models.PageContentModel>)
+                    foreach (var content in ViewData["Contents"] as List<PageContentModel>)
                     {
                         <div class="form-group">
-                            @if (content.Type == CMS.Enums.ContentTypesEnum.Text)
+                            <input type="hidden" name="contentOrders" value="@content.Order" />
+                            <input type="hidden" name="contentTypes" value="@(content.Type == ContentTypesEnum.Image ? "Image" : "Text")" />
+
+                            @if (content.Type == ContentTypesEnum.Image)
                             {
-                                <label>Text Content</label>
-                                <textarea name="Contents" class="form-control">@content.Value</textarea>
+                                <label>Sekcja @content.Order zdjęcie</label>
+                                <input type="file" name="fileContents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                                <span validation="@($"Contents[{content.Order}]")" class="text-danger"></span>
                             }
-                            else if (content.Type == CMS.Enums.ContentTypesEnum.Image)
+                            else
                             {
-                                <label>Image Content</label>
-                                <input type="file" name="Contents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                                <label>Sekcja @content.Order tekst</label>
+                                <textarea name="textContents" class="form-control">@content.Value</textarea>
+                                <span validation="@($"Contents[{content.Order}]")" class="text-danger"></span>
                             }
+
                         </div>
                     }
                 }
@@ -77,9 +84,9 @@
             <div class="form-group">
                 <button type="button" class="btn btn-secondary" onclick="addTextContent()">Add Text</button>
                 <button type="button" class="btn btn-secondary" onclick="addImageContent()">Add Image</button>
-            </div>
-            <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
+                <br>
+                <span asp-validation-for="Contents" class="text-danger"></span>
             </div>
         </form>
     </div>
@@ -91,20 +98,32 @@
 
 @section Scripts {
     <script type="text/javascript">
+        var currentIndex = @((ViewData["Contents"] != null) ? (ViewData["Contents"] as List<PageContentModel>).Count + 1 : 1);
+
         function addTextContent() {
             var contentInputs = document.getElementById('contentInputs');
             var div = document.createElement('div');
             div.className = 'form-group';
-            div.innerHTML = '<label>Text Content</label><textarea name="Contents" class="form-control"></textarea>';
+            div.innerHTML = `<input type="hidden" name="contentOrders" value="${currentIndex}" />
+                             <input type="hidden" name="contentTypes" value="Text" />
+                             <label>Sekcja ${currentIndex} tekst</label>
+                             <textarea name="textContents" class="form-control"></textarea>
+                             <span validation="Contents[${currentIndex}]" class="text-danger"></span>`;
             contentInputs.appendChild(div);
+            currentIndex++;
         }
 
         function addImageContent() {
             var contentInputs = document.getElementById('contentInputs');
             var div = document.createElement('div');
             div.className = 'form-group';
-            div.innerHTML = '<label>Image Content</label><input type="file" name="Contents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />';
+            div.innerHTML = `<input type="hidden" name="contentOrders" value="${currentIndex}" />
+                             <input type="hidden" name="contentTypes" value="Image" />
+                             <label>Sekcja ${currentIndex} zdjęcie</label>
+                             <input type="file" name="fileContents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                             <span validation="Contents[${currentIndex}]" class="text-danger"></span>`;
             contentInputs.appendChild(div);
+            currentIndex++;
         }
     </script>
 }

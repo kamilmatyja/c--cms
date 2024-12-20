@@ -1,3 +1,5 @@
+@using CMS.Enums
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model CMS.Models.PageModel
 
 @{
@@ -58,8 +60,38 @@
                 <input asp-for="Image" class="form-control" type="file" accept=".webp,.jpeg,.jpg,.png,.gif" />
                 <span asp-validation-for="Image" class="text-danger"></span>
             </div>
+            <div id="contentInputs">
+                @if (Model.Contents.Count > 0)
+                {
+                    foreach (var content in Model.Contents as List<PageContentModel>)
+                    {
+                        <div class="form-group">
+                            <input type="hidden" name="contentOrders" value="@content.Order" />
+                            <input type="hidden" name="contentTypes" value="@(content.Type == ContentTypesEnum.Image ? "Image" : "Text")" />
+
+                            @if (content.Type == ContentTypesEnum.Image)
+                            {
+                                <label>Sekcja @content.Order zdjęcie</label>
+                                <input type="file" name="fileContents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                                <span validation="@($"Contents[{content.Order}]")" class="text-danger"></span>
+                            }
+                            else
+                            {
+                                <label>Sekcja @content.Order tekst</label>
+                                <textarea name="textContents" class="form-control">@content.Value</textarea>
+                                <span validation="@($"Contents[{content.Order}]")" class="text-danger"></span>
+                            }
+
+                        </div>
+                    }
+                }
+            </div>
             <div class="form-group">
+                <button type="button" class="btn btn-secondary" onclick="addTextContent()">Add Text</button>
+                <button type="button" class="btn btn-secondary" onclick="addImageContent()">Add Image</button>
                 <input type="submit" value="Save" class="btn btn-primary" />
+                <br>
+                <span asp-validation-for="Contents" class="text-danger"></span>
             </div>
         </form>
     </div>
@@ -69,3 +101,34 @@
     <a asp-action="Index">Back to List</a>
 </div>
 
+@section Scripts {
+    <script type="text/javascript">
+        var currentIndex = @((ViewData["Contents"] != null) ? (ViewData["Contents"] as List<PageContentModel>).Count + 1 : 1);
+
+        function addTextContent() {
+            var contentInputs = document.getElementById('contentInputs');
+            var div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `<input type="hidden" name="contentOrders" value="${currentIndex}" />
+                             <input type="hidden" name="contentTypes" value="Text" />
+                             <label>Sekcja ${currentIndex} tekst</label>
+                             <textarea name="textContents" class="form-control"></textarea>
+                             <span validation="Contents[${currentIndex}]" class="text-danger"></span>`;
+            contentInputs.appendChild(div);
+            currentIndex++;
+        }
+
+        function addImageContent() {
+            var contentInputs = document.getElementById('contentInputs');
+            var div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `<input type="hidden" name="contentOrders" value="${currentIndex}" />
+                             <input type="hidden" name="contentTypes" value="Image" />
+                             <label>Sekcja ${currentIndex} zdjęcie</label>
+                             <input type="file" name="fileContents" class="form-control" accept=".webp,.jpeg,.jpg,.png,.gif" />
+                             <span validation="Contents[${currentIndex}]" class="text-danger"></span>`;
+            contentInputs.appendChild(div);
+            currentIndex++;
+        }
+    </script>
+}

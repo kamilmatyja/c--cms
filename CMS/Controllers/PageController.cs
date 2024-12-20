@@ -45,6 +45,7 @@ namespace CMS.Controllers
                 .Include(p => p.ParentPage)
                 .Include(p => p.User)
                 .ThenInclude(u => u.IdentityUser)
+                .Include(p => p.Contents)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (pageModel == null)
             {
@@ -78,7 +79,11 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([FromForm] int userId, [FromForm] int? parentPageId, [FromForm] int categoryId, [FromForm] DateTime createdAt, [FromForm] string link, [FromForm] string title, [FromForm] string description, [FromForm] string keywords, [FromForm] IFormFile? image, [FromForm] List<IFormFile> contents)
+        public async Task<IActionResult> Create([FromForm] int userId, [FromForm] int? parentPageId,
+            [FromForm] int categoryId, [FromForm] DateTime createdAt, [FromForm] string link, [FromForm] string title,
+            [FromForm] string description, [FromForm] string keywords, [FromForm] IFormFile? image,
+            List<string> textContents, List<IFormFile> fileContents, List<int> contentOrders,
+            List<string> contentTypes)
         {
             var pageModel = new PageModel
             {
@@ -121,46 +126,77 @@ namespace CMS.Controllers
                 }
             }
 
-            foreach (var content in contents)
+            var pageContents = new List<PageContentModel>();
+
+            for (int i = 0; i < contentOrders.Count; i++)
             {
-                var pageContent = new PageContentModel();
+                var order = contentOrders[i];
+                var type = contentTypes[i];
 
-                if (content.ContentType.StartsWith("image/"))
+                var pageContent = new PageContentModel
                 {
-                    var allowedExtensions = new[] { ".webp", ".jpeg", ".jpg", ".png", ".gif" };
-                    var extension = Path.GetExtension(content.FileName).ToLowerInvariant();
-                    if (!allowedExtensions.Contains(extension))
-                    {
-                        ModelState.AddModelError("Contents", "This file extension is not allowed.");
-                        return View(pageModel);
-                    }
+                    PageId = pageModel.Id,
+                    Page = pageModel,
+                    Order = order
+                };
 
-                    using (var memoryStream = new MemoryStream())
+                if (type == "Image") {
+                    pageContent.Type = ContentTypesEnum.Image;
+                    var file = fileContents.FirstOrDefault();
+
+                    if (file == null || file.Length == 0)
                     {
-                        await content.CopyToAsync(memoryStream);
-                        pageContent.PageId = pageModel.Id;
-                        pageContent.Page = pageModel;
-                        pageContent.Value = Convert.ToBase64String(memoryStream.ToArray());
-                        pageContent.Type = ContentTypesEnum.Image;
+                        ModelState.AddModelError("Contents", "Please upload an image.");
                     }
-                }
-                else
-                {
-                    using (var reader = new StreamReader(content.OpenReadStream()))
+                    else
                     {
-                        pageContent.PageId = pageModel.Id;
-                        pageContent.Page = pageModel;
-                        pageContent.Value = await reader.ReadToEndAsync();
+                        var allowedExtensions = new[] { ".webp", ".jpeg", ".jpg", ".png", ".gif" };
+                        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                        if (!allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("Contents", "This file extension is not allowed.");
+                        }
+                        else
+                        {
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                await file.CopyToAsync(memoryStream);
+                                pageContent.Value = Convert.ToBase64String(memoryStream.ToArray());
+                            }
+                        }
+
+                        fileContents.RemoveAt(0);
+                    }
+                } else
+                {
+                    var value = textContents.FirstOrDefault();
+
+                    if (value == null)
+                    {
+                        ModelState.AddModelError("Contents", "The text field is required.");
+                    }
+                    else
+                    {
                         pageContent.Type = ContentTypesEnum.Text;
+                        pageContent.Value = value;
+
+                        textContents.RemoveAt(0);
                     }
                 }
 
-                pageModel.Contents.Add(pageContent);
+                pageContents.Add(pageContent);
             }
 
             if (ModelState.IsValid)
             {
                 _context.Add(pageModel);
+
+                foreach (var pageContent in pageContents)
+                {
+                    _context.Add(pageContent);
+                    pageModel.Contents.Add(pageContent);
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -178,7 +214,7 @@ namespace CMS.Controllers
 
             ViewData["CreatedAt"] = DateTime.Now.ToString("yyyy-MM-dd");
 
-            ViewData["Contents"] = pageModel.Contents;
+            ViewData["Contents"] = pageContents;
 
             return View(pageModel);
         }
@@ -191,7 +227,10 @@ namespace CMS.Controllers
                 return NotFound();
             }
 
-            var pageModel = await _context.PageModel.FindAsync(id);
+            var pageModel = await _context.PageModel
+                .Include(p => p.Contents)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (pageModel == null)
             {
                 return NotFound();
@@ -221,7 +260,11 @@ namespace CMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [FromForm] int userId, [FromForm] int? parentPageId, [FromForm] int categoryId, [FromForm] DateTime createdAt, [FromForm] string link, [FromForm] string title, [FromForm] string description, [FromForm] string keywords, [FromForm] IFormFile? image)
+        public async Task<IActionResult> Edit(int id, [FromForm] int userId, [FromForm] int? parentPageId,
+            [FromForm] int categoryId, [FromForm] DateTime createdAt, [FromForm] string link, [FromForm] string title,
+            [FromForm] string description, [FromForm] string keywords, [FromForm] IFormFile? image,
+            List<string> textContents, List<IFormFile> fileContents, List<int> contentOrders,
+            List<string> contentTypes)
         {
             var pageModel = await _context.PageModel.FindAsync(id);
             if (pageModel == null)
@@ -264,9 +307,83 @@ namespace CMS.Controllers
                 }
             }
 
+            var pageContents = new List<PageContentModel>();
+
+            for (int i = 0; i < contentOrders.Count; i++)
+            {
+                var order = contentOrders[i];
+                var type = contentTypes[i];
+
+                var pageContent = new PageContentModel
+                {
+                    PageId = pageModel.Id,
+                    Page = pageModel,
+                    Order = order
+                };
+
+                if (type == "Image") {
+                    pageContent.Type = ContentTypesEnum.Image;
+                    var file = fileContents.FirstOrDefault();
+
+                    if (file == null || file.Length == 0)
+                    {
+                        ModelState.AddModelError("Contents", "Please upload an image.");
+                    }
+                    else
+                    {
+                        var allowedExtensions = new[] { ".webp", ".jpeg", ".jpg", ".png", ".gif" };
+                        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                        if (!allowedExtensions.Contains(extension))
+                        {
+                            ModelState.AddModelError("Contents", "This file extension is not allowed.");
+                        }
+                        else
+                        {
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                await file.CopyToAsync(memoryStream);
+                                pageContent.Value = Convert.ToBase64String(memoryStream.ToArray());
+                            }
+                        }
+
+                        fileContents.RemoveAt(0);
+                    }
+                } else
+                {
+                    var value = textContents.FirstOrDefault();
+
+                    if (value == null)
+                    {
+                        ModelState.AddModelError("Contents", "The text field is required.");
+                    }
+                    else
+                    {
+                        pageContent.Type = ContentTypesEnum.Text;
+                        pageContent.Value = value;
+
+                        textContents.RemoveAt(0);
+                    }
+                }
+
+                pageContents.Add(pageContent);
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Update(pageModel);
+
+                foreach (var pageContent in pageContents)
+                {
+                    if (pageContent.Id == 0)
+                    {
+                        _context.Add(pageContent);
+                    }
+                    else
+                    {
+                        _context.Update(pageContent);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -303,6 +420,7 @@ namespace CMS.Controllers
                 .Include(p => p.ParentPage)
                 .Include(p => p.User)
                 .ThenInclude(u => u.IdentityUser)
+                .Include(p => p.Contents)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (pageModel == null)
             {
@@ -317,7 +435,10 @@ namespace CMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var pageModel = await _context.PageModel.FindAsync(id);
+            var pageModel = await _context.PageModel
+                .Include(p => p.Contents)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (pageModel != null)
             {
                 _context.PageModel.Remove(pageModel);
