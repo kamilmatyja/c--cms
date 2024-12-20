@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CMS.Enums;
 
 namespace CMS.Models;
 
@@ -24,4 +25,7 @@ public class CommentModel
     [Required]
     [Display(Name="Treść")]
     public string Description { get; set; }
+    [Required]
+    [Display(Name="Status")]
+    public InteractionStatusesEnum Status { get; set; }
 }

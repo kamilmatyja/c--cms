@@ -212,7 +212,7 @@ namespace CMS.Controllers
 
             ViewData["CategoryId"] = new SelectList(_context.CategoryModel, "Id", "Name", pageModel.CategoryId);
 
-            ViewData["CreatedAt"] = DateTime.Now.ToString("yyyy-MM-dd");
+            ViewData["CreatedAt"] = pageModel.CreatedAt.ToString("yyyy-MM-dd");
 
             ViewData["Contents"] = pageContents;
 

@@ -27,6 +27,7 @@ namespace CMS.Controllers
                 .Include(e => e.Page)
                 .Include(c => c.User)
                 .ThenInclude(u => u.IdentityUser);
+
             return View(await applicationDbContext.ToListAsync());
         }
 

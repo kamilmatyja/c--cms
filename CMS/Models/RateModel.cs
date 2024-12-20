@@ -25,4 +25,7 @@ public class RateModel
     [Required]
     [Display(Name="Wartość")]
     public RatingsEnum Rating { get; set; }
+    [Required]
+    [Display(Name="Status")]
+    public InteractionStatusesEnum Status { get; set; }
 }
